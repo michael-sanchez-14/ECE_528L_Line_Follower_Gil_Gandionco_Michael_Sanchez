@@ -10,8 +10,13 @@ The Line Follower lab interfaces with the following:
 * Pololu Gearmotor with Encoder - [Product Link](https://www.pololu.com/product/3675)
 * 8-Channel QTRX Sensor Array - [Product Link](https://www.pololu.com/product/3672)
 ## Overview
+For Lab 3 we combine what we learned from the previous labs. By combining the techniques from the Reflectance sensor lab and the motor control lab, we implement code to have the robot navigate through a maze by itself.
 
 ## Components Used:
+* MSP432 LaunchPad
+* USB-A to Micro-USB cable
+* TI-RSLK MAX Chassis
+* 8-Channel QTRX Sensor Array
 
 ## Pre Lab
 1. Write a void function named Chassis_Board_LEDs_Init that takes no arguments and initializes the follwing pins as output GPIO pins. Initailize the value of the pins to zero.
@@ -40,12 +45,21 @@ and add your name in the author section to get full credit. If you’ve used ref
 (e.g. GeeksforGeeks, StackOverflow, etc.), cite them below
 
 ## Analysis and Results:
+To start this lab we first had to include many different header files, once this was done we created a constant PWM duty cycle and a global variable for the Timer A1. Moving on we created a typedef enum that contained the variables that were assigned different values relating to the position the robot is in. Using these variables we used the Detect_Line_Position function created in Lab 2 and replaced the switch case values with the appropriate values. Next we created the Timer_A1_Periodic_Task function that would increment our global variable by 1 every time a periodic interrupt was generated, this was every 1 ms. Next we used if statements to start sampling every 10 milliseconds, then every 11 milliseconds we stop sampling and called hte Detect_Line_Position function.
+
+Once this was done we called several different functions within the main function, two of these functions were SysTick_Interrupt_Init and Timer_A1_Interrupt_Init which create periodic interrupts every 1ms. Next we tested what we had so far by placing the robot in the appropriate positions, once we did this we encountered an error, that repeatedly reset our global variable. Once we got rid of this line of code we were ready to move onto the task.
+
 
 ## Known Issues or Limitations
 No known issues or limitations.
 
 ## Author Contribution
-
+* Michael Sanchez
+    * Worked on Pre-Lab question 1
+    * Implemented the necessary lines of code from the procedure
+* Gil Gandionco 
+    * Word on Pre-Lab question 2
+    * Implemented the necessary code for the task
 ## References
 
 * MSP432P4xx SimpleLink™ Microcontrollers

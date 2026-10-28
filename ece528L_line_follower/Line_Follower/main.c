@@ -48,7 +48,7 @@ typedef enum
     RIGHT_TURN          = 0b00011111,
     T_INTERSECTION      = 0b11111111,
     DEAD_END            = 0b00000000
-};
+} Line_Position;
 
 void Detect_Line_Position(uint8_t reflectance_sensor_data)
 {
@@ -141,7 +141,7 @@ void Timer_A1_Periodic_Task(void)
     {
         uint8_t Reflectance_Sensor_Data = Reflectance_Sensor_End();
         Detect_Line_Position(Reflectance_Sensor_Data);
-        Timer_A1_ms_elapsed = 0;
+
     }
 }
 
