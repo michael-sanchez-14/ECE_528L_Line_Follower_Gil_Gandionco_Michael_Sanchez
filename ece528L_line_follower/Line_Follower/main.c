@@ -50,9 +50,141 @@ typedef enum
     DEAD_END            = 0b00000000
 } Line_Position;
 
-void Detect_Line_Position(uint8_t reflectance_sensor_data)
+typedef enum
 {
-    switch(reflectance_sensor_data)
+    MOVE_FORWARD,
+    MOVE_TO_LEFT,
+    MOVE_TO_RIGHT,
+    TURN_LEFT,
+    TURN_RIGHT,
+    HANDLE_INTERSECTION,
+    NO_LINE,
+    STOP
+}Robot_State;
+
+#define MIN_TURN_MS 100
+#define MAX_TURN_MS 1200
+#define MIN_U_TURN_MS 600
+#define MAX_U_TURN_MS 4500
+
+void Update_Robot_FSM(uint8_t Reflectance_Sensor_Data, int32_t Position)
+{
+    Robot_State current_state = MOVE_FORWARD;
+    uint32_t elapsed = Timer_A1_ms_elapsed - turn_start_ms;
+    uint32_t turn_start_ms = 0;
+
+    switch (current_state)
+    {
+        case MOVE_FORWARD:
+        case MOVE_TO_LEFT:
+        case MOVE_TO_RIGHT:
+
+            if (Reflectance_Sensor_Data == LEFT_TURN)
+            {
+                current_state = TURN_LEFT;
+                turn_start_ms = Timer_A1_ms_elapsed;
+            }
+            else if (Reflectance_Sensor_Data == RIGHT_TURN)
+            {
+                current_state = TURN_RIGHT;
+                turn_start_ms = Timer_A1_ms_elapsed;
+            }
+            else if (Reflectance_Sensor_Data == T_INTERSECTION)
+            {
+                current_state = HANDLE_INTERSECTION;
+                turn_start_ms = Timer_A1_ms_elapsed;
+            }
+            else if (Reflectance_Sensor_Data == DEAD_END)
+            {
+                current_state = NO_LINE;
+            }
+            else if (Position <= -47)
+            {
+                current_state = MOVE_TO_LEFT;
+            }
+            else if (Position >= 47)
+            {
+                current_state = MOVE_TO_RIGHT;
+            }
+            else
+            {
+                current_state = MOVE_FORWARD;
+            }
+            break;
+
+        case TURN_LEFT:
+        case TURN_RIGHT:
+
+            if ((elapsed >= MIN_TURN_MS) && (Reflectance_Sensor_Data != DEAD_END) && (Position > -47 && Position < 47))
+            {
+                current_state = MOVE_FORWARD;
+            }
+            else if (elapsed >= MAX_TURN_MS)
+            {
+                current_state = STOP;
+            }
+            break;
+
+        case HANDLE_INTERSECTION:
+            if ((elapsed >= MIN_U_TURN_MS) && (Reflectance_Sensor_Data == CENTER) && (Position > -47 && Position < 47))
+            {
+                current_state = MOVE_FORWARD;
+            }
+            else if (elapsed >= MAX_U_TURN_MS)
+            {
+                current_state = STOP;
+            }
+            break;
+
+        case NO_LINE:
+            if (Reflectance_Sensor_Data != DEAD_END)
+            {
+                current_state = MOVE_FORWARD;
+            }
+            break;
+
+        default:
+            current_state = STOP;
+            break;
+    }
+
+    // Execute motor commands
+    switch (current_state)
+    {
+        case MOVE_FORWARD:
+            Motor_Forward(PWM_NOMINAL, PWM_NOMINAL);
+            break;
+
+        case MOVE_TO_LEFT:
+            Motor_Forward(PWM_NOMINAL - 1000, PWM_NOMINAL);
+            break;
+
+        case MOVE_TO_RIGHT:
+            Motor_Forward(PWM_NOMINAL, PWM_NOMINAL - 1000);
+            break;
+
+        case TURN_LEFT:
+            Motor_Left(PWM_NOMINAL, PWM_NOMINAL);
+            break;
+
+        case TURN_RIGHT:
+            Motor_Right(PWM_NOMINAL, PWM_NOMINAL);
+            break;
+
+        case HANDLE_INTERSECTION:
+            Motor_Right(PWM_NOMINAL, PWM_NOMINAL);
+            break;
+
+        case NO_LINE:
+        default:
+            Motor_Stop();
+            break;
+    }
+}
+
+void Detect_Line_Position(uint8_t Reflectance_Sensor_Data)
+{
+    switch(Reflectance_Sensor_Data)
     {
         case CENTER:
         {
@@ -72,6 +204,7 @@ void Detect_Line_Position(uint8_t reflectance_sensor_data)
         {
             LED1_Output(RED_LED_OFF);
             LED2_Output(RGB_LED_PINK);
+
         }
         break;
 
@@ -140,8 +273,9 @@ void Timer_A1_Periodic_Task(void)
     if((Timer_A1_ms_elapsed % 10) == 1)
     {
         uint8_t Reflectance_Sensor_Data = Reflectance_Sensor_End();
+        int32_t Position = Reflectance_Sensor_Position(Reflectance_Sensor_Data);
         Detect_Line_Position(Reflectance_Sensor_Data);
-
+        Update_Robot_FSM(Reflectance_Sensor_Data, Position);
     }
 }
 
@@ -168,6 +302,7 @@ int main(void)
 
     //Initialize Timer A1 periodic interrupts every 1ms
     Timer_A1_Interrupt_Init(&Timer_A1_Periodic_Task, TIMER_A1_INT_CCR0_VALUE);
+    Motor_Init();
 
     //Enable the interrupts used by the modules
     EnableInterrupts();
