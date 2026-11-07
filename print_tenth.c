@@ -9,7 +9,7 @@
 * and a different message following the 10th iteration (11, 21,
 * 31, 41, 51).
 *
-* @author <Your name(s) here>
+* @author Gil Gandionco and Michael Sanchez
 */
 #include <stdio.h>
 void Print_Tenth();
