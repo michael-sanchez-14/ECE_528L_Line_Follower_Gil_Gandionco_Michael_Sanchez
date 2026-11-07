@@ -64,6 +64,11 @@ No known issues or limitations.
 * Gil Gandionco 
     * Word on Pre-Lab question 2
     * Implemented the necessary code for the task
+
+## Project Demonstration
+
+[Line_Follower Demonstration](video/line_follower_demo.mp4)
+
 ## References
 
 * MSP432P4xx SimpleLink™ Microcontrollers
