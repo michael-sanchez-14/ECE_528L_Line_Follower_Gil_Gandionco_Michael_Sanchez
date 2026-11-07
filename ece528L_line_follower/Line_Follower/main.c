@@ -67,11 +67,13 @@ typedef enum
 #define MIN_U_TURN_MS 600
 #define MAX_U_TURN_MS 4500
 
+static Robot_State current_state = MOVE_FORWARD;
+static uint32_t turn_start_ms = 0;
+
 void Update_Robot_FSM(uint8_t Reflectance_Sensor_Data, int32_t Position)
 {
-    Robot_State current_state = MOVE_FORWARD;
+
     uint32_t elapsed = Timer_A1_ms_elapsed - turn_start_ms;
-    uint32_t turn_start_ms = 0;
 
     switch (current_state)
     {
@@ -98,11 +100,11 @@ void Update_Robot_FSM(uint8_t Reflectance_Sensor_Data, int32_t Position)
             {
                 current_state = NO_LINE;
             }
-            else if (Position <= -47)
+            else if (Position <= -47 && Position > -332)
             {
                 current_state = MOVE_TO_LEFT;
             }
-            else if (Position >= 47)
+            else if (Position >= 47 && Position < 332)
             {
                 current_state = MOVE_TO_RIGHT;
             }
@@ -115,7 +117,7 @@ void Update_Robot_FSM(uint8_t Reflectance_Sensor_Data, int32_t Position)
         case TURN_LEFT:
         case TURN_RIGHT:
 
-            if ((elapsed >= MIN_TURN_MS) && (Reflectance_Sensor_Data != DEAD_END) && (Position > -47 && Position < 47))
+            if ((elapsed >= MIN_TURN_MS) && ((Reflectance_Sensor_Data & CENTER) != 0) && (Position > -47 && Position < 47))
             {
                 current_state = MOVE_FORWARD;
             }
